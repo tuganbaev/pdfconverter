@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% load file_filters %}
+
+{% block title %}Transaction History - PDF Converter Pro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-receipt"></i> Transaction History</h2>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-euro-sign text-danger" style="font-size: 48px;"></i>
+                    <h5 class="mt-3">Total Spent</h5>
+                    <h3>€{{ stats.total_spent|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-file-pdf text-primary" style="font-size: 48px;"></i>
+                    <h5 class="mt-3">Paid Conversions</h5>
+                    <h3>{{ stats.total_conversions }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-gift text-success" style="font-size: 48px;"></i>
+                    <h5 class="mt-3">Free Conversions Used</h5>
+                    <h3>{{ stats.free_conversions_used }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-plus-circle text-info" style="font-size: 48px;"></i>
+                    <h5 class="mt-3">Balance Added</h5>
+                    <h3>€{{ stats.total_added|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Transactions Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> All Transactions</h5>
+                </div>
+                <div class="card-body">
+                    {% if transactions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Operation</th>
+                                        <th>Amount</th>
+                                        <th>Payment Method</th>
+                                        <th>Balance</th>
+                                        <th>Status</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transaction in transactions %}
+                                    <tr class="{% if not transaction.is_successful %}table-danger{% endif %}">
+                                        <td>{{ transaction.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            {% if transaction.transaction_type == 'conversion' %}
+                                                <span class="badge bg-primary">Conversion</span>
+                                            {% elif transaction.transaction_type == 'balance_add' %}
+                                                <span class="badge bg-success">Balance Add</span>
+                                            {% elif transaction.transaction_type == 'refund' %}
+                                                <span class="badge bg-warning">Refund</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if transaction.operation_type %}
+                                                <span class="badge bg-info">{{ transaction.get_operation_type_display }}</span>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if transaction.amount > 0 %}
+                                                {% if transaction.transaction_type == 'conversion' %}
+                                                    <span class="text-danger">-€{{ transaction.amount }}</span>
+                                                {% else %}
+                                                    <span class="text-success">+€{{ transaction.amount }}</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-muted">Free</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if transaction.payment_method == 'free_conversion' %}
+                                                <i class="fas fa-gift text-success"></i> Free
+                                            {% elif transaction.payment_method == 'balance' %}
+                                                <i class="fas fa-coins text-warning"></i> Balance
+                                            {% elif transaction.payment_method == 'credit_card' %}
+                                                <i class="fas fa-credit-card text-primary"></i> Card
+                                            {% elif transaction.payment_method == 'paypal' %}
+                                                <i class="fab fa-paypal text-info"></i> PayPal
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                €{{ transaction.balance_before }} → €{{ transaction.balance_after }}
+                                                {% if transaction.free_conversions_before != transaction.free_conversions_after %}
+                                                    <br><i class="fas fa-gift"></i> {{ transaction.free_conversions_before }} → {{ transaction.free_conversions_after }}
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if transaction.is_successful %}
+                                                <span class="badge bg-success">Success</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ transaction.description }}</small>
+                                            {% if transaction.document %}
+                                                <br><small class="text-primary" title="{{ transaction.document.original_file.name|filename_only }}">
+                                                    <i class="fas fa-file"></i> 
+                                                    {% if transaction.document.converted_file %}
+                                                        <a href="{% url 'download' transaction.document.id %}">{{ transaction.document.original_file.name|smart_truncate:25 }}</a>
+                                                    {% else %}
+                                                        {{ transaction.document.original_file.name|smart_truncate:25 }}
+                                                    {% endif %}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-receipt text-muted" style="font-size: 64px;"></i>
+                            <h5 class="mt-3 text-muted">No transactions yet</h5>
+                            <p class="text-muted">Your transaction history will appear here once you start using the service.</p>
+                            <a href="{% url 'convert' %}" class="btn btn-primary">
+                                <i class="fas fa-file-upload"></i> Start Converting
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

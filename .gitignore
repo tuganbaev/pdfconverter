@@ -19,7 +19,15 @@ wheels/
 .installed.cfg
 *.egg
 
+# Environment files
 .env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+.env.*
+.envrc
 .venv
 env/
 venv/
@@ -27,10 +35,47 @@ ENV/
 env.bak/
 venv.bak/
 
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Database
 *.sqlite3
 db.sqlite3
+*.db
 
+# Media and Static files
 /static/
 /media/
 /staticfiles/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Security
+*.key
+*.pem
+*.p12
+*.cert
+*.crt
+secrets/

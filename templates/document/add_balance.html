@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Balance - PDF Converter Pro{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-coins"></i> Add Balance</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Current Balance: <strong>${{ user.balance }}</strong>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="form-label">Select Amount</label>
+                            <div class="row g-3">
+                                <div class="col-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="amount" id="amount10" value="10" checked>
+                                        <label class="form-check-label" for="amount10">
+                                            <strong>$10</strong><br>
+                                            <small class="text-muted">10 conversions</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="amount" id="amount25" value="25">
+                                        <label class="form-check-label" for="amount25">
+                                            <strong>$25</strong><br>
+                                            <small class="text-muted">25 conversions</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="amount" id="amount50" value="50">
+                                        <label class="form-check-label" for="amount50">
+                                            <strong>$50</strong><br>
+                                            <small class="text-muted">50 conversions</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Demo Mode</strong><br>
+                            This is a demonstration. In production, this would integrate with a payment gateway.
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-credit-card"></i> Add Balance (Demo)
+                            </button>
+                            <a href="{% url 'convert' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

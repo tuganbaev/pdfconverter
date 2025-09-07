@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Converter - Simple Document Conversion</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                PDF Converter
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login/">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/register/">Sign Up</a>
+                        </li>
+                    
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    
+
+    <main>
+        
+<div class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">PDF Converter</h1>
+        <p class="hero-subtitle">Convert your documents to PDF format quickly and easily</p>
+        
+        
+            <div class="d-flex justify-content-center gap-3 mb-4">
+                <a href="/register/" class="btn btn-primary">Get Started</a>
+                <a href="/login/" class="btn btn-secondary">Login</a>
+            </div>
+        
+    </div>
+</div>
+
+<div class="container">
+    <div class="feature-grid">
+        <!-- DOCX to PDF - Available -->
+        <div class="feature-card" onclick="window.location.href='/login/'">
+            <div class="feature-icon docx">
+                <i class="fas fa-file-word"></i>
+            </div>
+            <h3 class="feature-title">DOCX to PDF</h3>
+            <p class="feature-description">Convert Microsoft Word documents to PDF format</p>
+            <div class="feature-badge badge-free">Free</div>
+            <div class="btn btn-primary">
+                Login to Convert
+            </div>
+        </div>
+
+        <!-- Excel to PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon excel">
+                <i class="fas fa-file-excel"></i>
+            </div>
+            <h3 class="feature-title">Excel to PDF</h3>
+            <p class="feature-description">Convert spreadsheets to PDF with perfect formatting</p>
+            <div class="feature-badge badge-premium">Premium</div>
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        <!-- PowerPoint to PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon powerpoint">
+                <i class="fas fa-file-powerpoint"></i>
+            </div>
+            <h3 class="feature-title">PowerPoint to PDF</h3>
+            <p class="feature-description">Convert presentations to PDF for easy sharing</p>
+            <div class="feature-badge badge-premium">Premium</div>
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        <!-- Images to PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon image">
+                <i class="fas fa-images"></i>
+            </div>
+            <h3 class="feature-title">Images to PDF</h3>
+            <p class="feature-description">Convert JPG, PNG, and other images to PDF</p>
+            <div class="feature-badge badge-premium">Premium</div>
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        <!-- Merge PDFs - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon merge">
+                <i class="fas fa-object-group"></i>
+            </div>
+            <h3 class="feature-title">Merge PDFs</h3>
+            <p class="feature-description">Combine multiple PDF files into one document</p>
+            <div class="feature-badge badge-premium">Premium</div>
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        <!-- Compress PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon compress">
+                <i class="fas fa-compress-alt"></i>
+            </div>
+            <h3 class="feature-title">Compress PDF</h3>
+            <p class="feature-description">Reduce PDF file size without losing quality</p>
+            <div class="feature-badge badge-premium">Premium</div>
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="container mt-5 mb-5 text-center">
+    <div class="alert alert-info d-inline-block">
+        <h5><i class="fas fa-star"></i> Get Started for Free!</h5>
+        <p class="mb-2">Sign up now and get 3 free conversions plus $10 balance to try our service.</p>
+        <a href="/register/" class="btn btn-primary">Create Free Account</a>
+    </div>
+</div>
+
+
+<script>
+// Add click handlers for disabled cards to show info
+document.querySelectorAll('.feature-card.disabled').forEach(card => {
+    card.addEventListener('click', function() {
+        alert('This feature will be available soon! Sign up to get notified when it\'s ready.');
+    });
+});
+</script>
+
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 PDF Converter. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+</body>
+</html>

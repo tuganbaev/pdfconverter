@@ -1,0 +1,883 @@
+{% extends 'base.html' %}
+{% load file_filters %}
+
+{% block title %}Convert DOCX to PDF{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="text-center mb-4">
+                <div class="feature-icon docx mx-auto mb-3">
+                    <i class="fas fa-file-word"></i>
+                </div>
+                <h2>Convert DOCX to PDF</h2>
+                <p class="text-muted">Upload your Word document and download the PDF version</p>
+            </div>
+
+            {% if user.is_authenticated %}
+                {% if user.can_convert %}
+                    <div class="user-info mb-4">
+                        <div class="balance-info">
+                            <span><i class="fas fa-coins"></i> Balance: €{{ user.balance }}</span>
+                            <span><i class="fas fa-gift"></i> Free: {{ user.free_conversions }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data" id="uploadForm">
+                                {% csrf_token %}
+                                <div class="mb-4">
+                                    <label for="docx_file" class="form-label">Select or Drop DOCX File</label>
+                                    
+                                    <!-- Drag and Drop Area -->
+                                    <div class="drag-drop-area" id="dragDropArea">
+                                        <input type="file" class="file-input-hidden" id="docx_file" name="docx_file" accept=".docx" required>
+                                        
+                                        <div class="drag-drop-content" id="dragDropContent">
+                                            <i class="fas fa-cloud-upload-alt drag-drop-icon" id="dragDropIcon"></i>
+                                            <div class="drag-drop-text" id="dragDropText">Drop your DOCX file here</div>
+                                            <div class="drag-drop-hint">or click to browse</div>
+                                        </div>
+                                        
+                                        <!-- Selected File Info -->
+                                        <div class="selected-file-info" id="selectedFileInfo">
+                                            <div class="file-details">
+                                                <i class="fas fa-file-word file-icon"></i>
+                                                <div class="file-meta">
+                                                    <div class="file-name-display" id="fileName"></div>
+                                                    <div class="file-size-display" id="fileSize"></div>
+                                                </div>
+                                                <button type="button" class="file-remove" id="removeFileBtn">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-text">Maximum file size: 10MB. Supported formats: .docx</div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="button" class="btn btn-primary" id="convertBtn" data-bs-toggle="modal" data-bs-target="#confirmModal" disabled>
+                                        <i class="fas fa-sync-alt"></i> Convert to PDF
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <div id="progressSection" class="mt-4" style="display: none;">
+                                <div class="progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <p class="text-center mt-2 text-muted">Converting your document...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Conversion Confirmation Modal -->
+                    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="confirmModalLabel">Confirm Conversion</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-file-word text-primary" style="font-size: 48px;"></i>
+                                        <h6 class="mt-2">DOCX to PDF Conversion</h6>
+                                    </div>
+                                    
+                                    {% if user.free_conversions > 0 %}
+                                        <div class="alert alert-success">
+                                            <h6><i class="fas fa-gift"></i> Great news!</h6>
+                                            <p class="mb-1">This conversion will use one of your <strong>{{ user.free_conversions }} remaining free conversions</strong>.</p>
+                                            <small class="text-muted">After using all free conversions, each conversion costs €{{ docx_pricing.price }}.</small>
+                                        </div>
+                                        <div class="balance-preview">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Free conversions after:</span>
+                                                <span class="fw-bold text-success">{{ user.free_conversions|add:"-1" }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Balance after:</span>
+                                                <span class="fw-bold">€{{ user.balance }}</span>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-coins"></i> Paid Conversion</h6>
+                                            <p class="mb-1">This conversion will cost <strong>€{{ docx_pricing.price }}</strong> from your balance.</p>
+                                            <small class="text-muted">{{ docx_pricing.description }}</small>
+                                        </div>
+                                        <div class="balance-preview">
+                                            <div class="d-flex justify-content-between">
+                                                <span>Current balance:</span>
+                                                <span class="fw-bold">€{{ user.balance }}</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Cost:</span>
+                                                <span class="fw-bold text-danger">-€{{ docx_pricing.price }}</span>
+                                            </div>
+                                            <hr>
+                                            <div class="d-flex justify-content-between">
+                                                <span>Balance after:</span>
+                                                <span class="fw-bold" id="balanceAfter">€{{ user.balance }}</span>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="mt-3">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i>
+                                            Selected file: <span id="modalFileName">No file selected</span>
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary" id="confirmConversion">
+                                        <i class="fas fa-sync-alt"></i> Start Conversion
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-exclamation-circle text-warning mb-3" style="font-size: 48px;"></i>
+                            <h5>No Conversions Available</h5>
+                            <p class="text-muted">You've used all your free conversions and have no balance left.</p>
+                            <a href="{% url 'add_balance' %}" class="btn btn-primary">
+                                <i class="fas fa-coins"></i> Add Balance
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-user-circle text-primary mb-3" style="font-size: 48px;"></i>
+                        <h5>Login Required</h5>
+                        <p class="text-muted">Please login or register to start converting documents.</p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{% url 'login' %}?next={% url 'convert' %}" class="btn btn-primary">
+                                Login
+                            </a>
+                            <a href="{% url 'register' %}" class="btn btn-secondary">
+                                Sign Up
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% if user.is_authenticated %}
+            <div class="card mt-4" id="recentConversionsCard" {% if not recent_documents %}style="display: none;"{% endif %}>
+                <div class="card-header">
+                    <h6 class="mb-0">Recent Conversions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush" id="recentConversionslist">
+                        {% for doc in recent_documents %}
+                        <div class="list-group-item px-0 conversion-item" data-doc-id="{{ doc.id }}">
+                            <div class="conversion-info">
+                                <div class="fw-medium file-name" title="{{ doc.original_file.name|filename_only }}">
+                                    <i class="fas fa-file-word text-primary me-1"></i>
+                                    {{ doc.original_file.name|smart_truncate:25 }}
+                                </div>
+                                <small class="text-muted">{{ doc.created_at|date:"M d, H:i" }}</small>
+                            </div>
+                            <div class="conversion-actions">
+                                {% if doc.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% if doc.converted_file %}
+                                        <a href="{% url 'download' doc.id %}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    {% endif %}
+                                {% elif doc.status == 'processing' %}
+                                    <span class="badge bg-warning status-processing">Processing</span>
+                                {% elif doc.status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="list-group-item px-0 text-muted text-center" id="noConversionsMessage">
+                            No conversions yet. Upload a file to get started!
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadForm = document.getElementById('uploadForm');
+    const convertBtn = document.getElementById('convertBtn');
+    const confirmConversionBtn = document.getElementById('confirmConversion');
+    const fileInput = document.getElementById('docx_file');
+    
+    // Drag and Drop functionality
+    const dragDropArea = document.getElementById('dragDropArea');
+    const dragDropContent = document.getElementById('dragDropContent');
+    const selectedFileInfo = document.getElementById('selectedFileInfo');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+    
+    if (dragDropArea && fileInput) {
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dragDropArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        // Highlight drop area when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dragDropArea.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dragDropArea.addEventListener(eventName, unhighlight, false);
+        });
+        
+        // Handle dropped files
+        dragDropArea.addEventListener('drop', handleDrop, false);
+        
+        // Handle click to browse
+        dragDropArea.addEventListener('click', function() {
+            if (!dragDropArea.classList.contains('file-selected')) {
+                fileInput.click();
+            }
+        });
+        
+        // Handle file input change (for browse functionality)
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFiles(e.target.files);
+            }
+        });
+        
+        // Handle remove file button
+        if (removeFileBtn) {
+            removeFileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                removeFile();
+            });
+        }
+    }
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function highlight() {
+        if (!dragDropArea.classList.contains('file-selected')) {
+            dragDropArea.classList.add('drag-over');
+        }
+    }
+    
+    function unhighlight() {
+        dragDropArea.classList.remove('drag-over');
+    }
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        handleFiles(files);
+    }
+    
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            if (validateFile(file)) {
+                displayFile(file);
+                updateModalWithFile(file);
+                enableConvertButton();
+            }
+        }
+    }
+    
+    function validateFile(file) {
+        // Check file type
+        if (!file.name.toLowerCase().endsWith('.docx')) {
+            showFileError('Please select a valid DOCX file.');
+            return false;
+        }
+        
+        // Check file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxSize) {
+            showFileError('File size must be less than 10MB.');
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function displayFile(file) {
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const dragDropIcon = document.getElementById('dragDropIcon');
+        const dragDropText = document.getElementById('dragDropText');
+        
+        // Update file info display
+        if (fileName) fileName.textContent = file.name;
+        if (fileSize) fileSize.textContent = formatFileSize(file.size);
+        
+        // Change drag drop area appearance
+        dragDropArea.classList.add('file-selected');
+        dragDropArea.classList.add('file-uploaded');
+        
+        // Show file info, hide drag content
+        if (dragDropContent) dragDropContent.style.display = 'none';
+        if (selectedFileInfo) selectedFileInfo.classList.add('show');
+        
+        // Update icon and text
+        if (dragDropIcon) {
+            dragDropIcon.className = 'fas fa-check-circle drag-drop-icon';
+        }
+        
+        // Remove upload animation after it completes
+        setTimeout(() => {
+            dragDropArea.classList.remove('file-uploaded');
+        }, 300);
+        
+        // Set the file to the hidden input
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+    }
+    
+    function removeFile() {
+        const dragDropIcon = document.getElementById('dragDropIcon');
+        const dragDropContent = document.getElementById('dragDropContent');
+        const selectedFileInfo = document.getElementById('selectedFileInfo');
+        
+        // Reset drag drop area
+        dragDropArea.classList.remove('file-selected');
+        
+        // Show drag content, hide file info
+        if (dragDropContent) dragDropContent.style.display = 'flex';
+        if (selectedFileInfo) selectedFileInfo.classList.remove('show');
+        
+        // Reset icon
+        if (dragDropIcon) {
+            dragDropIcon.className = 'fas fa-cloud-upload-alt drag-drop-icon';
+        }
+        
+        // Clear file input
+        fileInput.value = '';
+        
+        // Disable convert button
+        disableConvertButton();
+        
+        // Clear modal filename
+        const modalFileName = document.getElementById('modalFileName');
+        if (modalFileName) {
+            modalFileName.textContent = 'No file selected';
+        }
+    }
+    
+    function updateModalWithFile(file) {
+        const modalFileName = document.getElementById('modalFileName');
+        const balanceAfter = document.getElementById('balanceAfter');
+        
+        if (file && modalFileName) {
+            const fileName = file.name;
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            modalFileName.textContent = `${fileName} (${fileSize} MB)`;
+            
+            // Calculate balance after conversion for paid operations
+            if (balanceAfter) {
+                const currentBalance = parseFloat('{{ user.balance }}');
+                const conversionPrice = parseFloat('{{ docx_pricing.price }}');
+                const freeConversions = parseInt('{{ user.free_conversions }}');
+                
+                if (freeConversions > 0) {
+                    balanceAfter.textContent = '€' + currentBalance.toFixed(2);
+                } else {
+                    const newBalance = currentBalance - conversionPrice;
+                    balanceAfter.textContent = '€' + newBalance.toFixed(2);
+                }
+            }
+        }
+    }
+    
+    function enableConvertButton() {
+        if (convertBtn) {
+            convertBtn.disabled = false;
+            convertBtn.setAttribute('data-bs-toggle', 'modal');
+            convertBtn.setAttribute('data-bs-target', '#confirmModal');
+        }
+    }
+    
+    function disableConvertButton() {
+        if (convertBtn) {
+            convertBtn.disabled = true;
+            convertBtn.removeAttribute('data-bs-toggle');
+            convertBtn.removeAttribute('data-bs-target');
+        }
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function showFileError(message) {
+        // Create error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger mt-2';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${message}`;
+        
+        // Remove existing error
+        const existingError = dragDropArea.parentNode.querySelector('.alert-danger');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Add new error
+        dragDropArea.parentNode.appendChild(errorDiv);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Handle modal confirmation
+    if (confirmConversionBtn && uploadForm) {
+        confirmConversionBtn.addEventListener('click', function() {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Get file info before form submission
+            const file = fileInput?.files[0];
+            let fileName = 'Unknown file';
+            
+            if (file) {
+                fileName = file.name;
+            }
+            
+            // Show progress immediately
+            showProgress();
+            
+            // Add pending conversion to the list
+            const tempConversionElement = addPendingConversion(fileName);
+            
+            // Start progress animation
+            animateProgress();
+            
+            // Submit the form
+            uploadForm.submit();
+            
+            // Start polling after form submission
+            setTimeout(() => {
+                // Try to get document ID from session after form processing
+                pollForNewConversion(tempConversionElement);
+            }, 500);
+        });
+    }
+    
+    function showProgress() {
+        const progressSection = document.getElementById('progressSection');
+        const convertBtn = document.getElementById('convertBtn');
+        
+        if (progressSection) progressSection.style.display = 'block';
+        if (convertBtn) {
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting...';
+        }
+    }
+    
+    function hideProgress() {
+        const progressSection = document.getElementById('progressSection');
+        const convertBtn = document.getElementById('convertBtn');
+        
+        if (progressSection) progressSection.style.display = 'none';
+        if (convertBtn) {
+            convertBtn.disabled = false;
+            convertBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Convert to PDF';
+        }
+        
+        // Clear any running intervals
+        if (window.conversionInterval) {
+            clearInterval(window.conversionInterval);
+            window.conversionInterval = null;
+        }
+    }
+    
+    function animateProgress() {
+        const progressBar = document.querySelector('.progress-bar');
+        if (!progressBar) return;
+        
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 8 + 3; // Random increment between 3-11%
+            
+            if (progress >= 90) {
+                progress = 90; // Stop at 90% until completion signal
+                clearInterval(interval);
+                window.conversionInterval = null;
+            }
+            
+            progressBar.style.width = progress + '%';
+        }, 200);
+        
+        // Store interval for cleanup
+        window.conversionInterval = interval;
+    }
+    
+    function completeProgress() {
+        const progressBar = document.querySelector('.progress-bar');
+        if (progressBar) {
+            // Complete the progress bar
+            progressBar.style.width = '100%';
+            
+            // Clean up after a short delay
+            setTimeout(() => {
+                hideProgress();
+            }, 500);
+        }
+    }
+    
+    // Clean up on page unload
+    window.addEventListener('beforeunload', function() {
+        if (window.conversionInterval) {
+            clearInterval(window.conversionInterval);
+        }
+    });
+    
+    // Hide progress when page becomes hidden (user switched tabs/minimized)
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            if (window.conversionInterval) {
+                clearInterval(window.conversionInterval);
+                window.conversionInterval = null;
+            }
+        }
+    });
+    
+    // Recent conversions management
+    function addPendingConversion(fileName) {
+        const conversationsList = document.getElementById('recentConversionslist');
+        const conversionsCard = document.getElementById('recentConversionsCard');
+        const noConversionsMessage = document.getElementById('noConversionsMessage');
+        
+        if (!conversationsList) return;
+        
+        // Remove "no conversions" message if it exists
+        if (noConversionsMessage) {
+            noConversionsMessage.remove();
+        }
+        
+        // Show the conversions card
+        if (conversionsCard) {
+            conversionsCard.style.display = 'block';
+        }
+        
+        // Truncate file name for display
+        const displayName = truncateFileName(fileName);
+        const now = new Date();
+        const timeString = now.toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false
+        });
+        
+        // Create new conversion item
+        const newItem = document.createElement('div');
+        newItem.className = 'list-group-item px-0 conversion-item';
+        newItem.id = 'temp-conversion'; // Temporary ID
+        newItem.innerHTML = `
+            <div class="conversion-info">
+                <div class="fw-medium file-name" title="${fileName}">
+                    ${displayName}
+                </div>
+                <small class="text-muted">${timeString}</small>
+            </div>
+            <div class="conversion-actions">
+                <span class="badge bg-warning status-processing">Processing</span>
+            </div>
+        `;
+        
+        // Insert at the beginning of the list
+        conversationsList.insertBefore(newItem, conversationsList.firstChild);
+        
+        // Limit to 5 items
+        const items = conversationsList.querySelectorAll('.conversion-item');
+        if (items.length > 5) {
+            items[items.length - 1].remove();
+        }
+        
+        return newItem;
+    }
+    
+    function truncateFileName(fileName, maxLength = 25) {
+        if (fileName.length <= maxLength) return fileName;
+        
+        const extension = fileName.split('.').pop();
+        const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'));
+        const truncatedName = nameWithoutExt.substring(0, maxLength - extension.length - 4) + '...';
+        
+        return truncatedName + '.' + extension;
+    }
+    
+    function updateConversionStatus(tempId, status, downloadUrl = null) {
+        const tempItem = document.getElementById(tempId);
+        if (!tempItem) return;
+        
+        const actionsDiv = tempItem.querySelector('.conversion-actions');
+        if (!actionsDiv) return;
+        
+        switch(status) {
+            case 'completed':
+                actionsDiv.innerHTML = `
+                    <span class="badge bg-success">Completed</span>
+                    ${downloadUrl ? `<a href="${downloadUrl}" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>` : ''}
+                `;
+                break;
+            case 'failed':
+                actionsDiv.innerHTML = '<span class="badge bg-danger">Failed</span>';
+                break;
+        }
+    }
+    
+    
+    // Poll for new conversion after form submission
+    function pollForNewConversion(targetElement) {
+        // Make a request to get the current conversion ID from session
+        fetch('/convert/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Parse HTML to extract current_conversion_id if available
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const scriptContent = doc.querySelector('script')?.textContent;
+            
+            // Look for conversion ID in the script content
+            if (scriptContent && scriptContent.includes('startPolling')) {
+                const match = scriptContent.match(/startPolling\('([^']+)'/);
+                if (match && match[1]) {
+                    startPolling(match[1], targetElement);
+                    return;
+                }
+            }
+            
+            // Fallback: poll most recent document
+            pollMostRecentDocument(targetElement);
+        })
+        .catch(error => {
+            console.error('Error getting conversion ID:', error);
+            pollMostRecentDocument(targetElement);
+        });
+    }
+    
+    function pollMostRecentDocument(targetElement) {
+        // If we can't get the exact document ID, poll the most recent one
+        const recentItems = document.querySelectorAll('.conversion-item[data-doc-id]');
+        if (recentItems.length > 0) {
+            const mostRecentId = recentItems[0].getAttribute('data-doc-id');
+            if (mostRecentId) {
+                startPolling(mostRecentId, targetElement);
+            }
+        }
+    }
+    
+    // Polling functionality
+    function startPolling(documentId, targetElement = null) {
+        if (!documentId) return;
+        
+        const pollInterval = setInterval(async () => {
+            try {
+                const response = await fetch(`/status/${documentId}/`);
+                const data = await response.json();
+                
+                if (data.status === 'completed') {
+                    // Update progress bar to 100%
+                    const progressBar = document.querySelector('.progress-bar');
+                    if (progressBar) {
+                        progressBar.style.width = '100%';
+                    }
+                    
+                    // Update user balance display
+                    if (data.user_balance !== undefined) {
+                        updateUserBalance(data.user_balance, data.free_conversions);
+                    }
+                    
+                    // Update conversion item in list
+                    if (targetElement) {
+                        updateConversionElement(targetElement, 'completed', data.download_url);
+                    }
+                    
+                    // Hide progress and reset form
+                    setTimeout(() => {
+                        hideProgress();
+                        showSuccessMessage('Document converted successfully!');
+                        
+                        // Auto-download after a short delay
+                        if (data.download_url) {
+                            setTimeout(() => {
+                                window.location.href = data.download_url;
+                            }, 1000);
+                        }
+                    }, 500);
+                    
+                    clearInterval(pollInterval);
+                    
+                } else if (data.status === 'failed') {
+                    // Update conversion item in list
+                    if (targetElement) {
+                        updateConversionElement(targetElement, 'failed');
+                    }
+                    
+                    hideProgress();
+                    showErrorMessage('Conversion failed. Please try again.');
+                    clearInterval(pollInterval);
+                    
+                } else if (data.status === 'processing') {
+                    // Keep polling, update progress realistically
+                    updateProgressRealistic();
+                }
+                
+            } catch (error) {
+                console.error('Polling error:', error);
+                clearInterval(pollInterval);
+                hideProgress();
+                showErrorMessage('An error occurred while checking conversion status.');
+            }
+        }, 1000); // Poll every second
+        
+        // Store interval for cleanup
+        window.currentPollInterval = pollInterval;
+        
+        // Auto-stop after 30 seconds (safety timeout)
+        setTimeout(() => {
+            if (window.currentPollInterval === pollInterval) {
+                clearInterval(pollInterval);
+                hideProgress();
+                showErrorMessage('Conversion timeout. Please refresh and try again.');
+            }
+        }, 30000);
+    }
+    
+    function updateProgressRealistic() {
+        const progressBar = document.querySelector('.progress-bar');
+        if (!progressBar) return;
+        
+        const currentWidth = parseFloat(progressBar.style.width) || 0;
+        if (currentWidth < 90) {
+            const newWidth = Math.min(currentWidth + Math.random() * 5 + 2, 90);
+            progressBar.style.width = newWidth + '%';
+        }
+    }
+    
+    function updateConversionElement(element, status, downloadUrl = null) {
+        if (!element) return;
+        
+        const actionsDiv = element.querySelector('.conversion-actions');
+        if (!actionsDiv) return;
+        
+        switch(status) {
+            case 'completed':
+                actionsDiv.innerHTML = `
+                    <span class="badge bg-success">Completed</span>
+                    ${downloadUrl ? `<a href="${downloadUrl}" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>` : ''}
+                `;
+                break;
+            case 'failed':
+                actionsDiv.innerHTML = '<span class="badge bg-danger">Failed</span>';
+                break;
+        }
+    }
+    
+    function updateUserBalance(balance, freeConversions) {
+        // Update balance info in navbar
+        const balanceElements = document.querySelectorAll('.balance-info span');
+        balanceElements.forEach(span => {
+            if (span.innerHTML.includes('fa-coins')) {
+                span.innerHTML = `<i class="fas fa-coins"></i> €${balance}`;
+            } else if (span.innerHTML.includes('fa-gift')) {
+                span.innerHTML = `<i class="fas fa-gift"></i> ${freeConversions}`;
+            }
+        });
+    }
+    
+    function showSuccessMessage(message) {
+        showMessage(message, 'success');
+    }
+    
+    function showErrorMessage(message) {
+        showMessage(message, 'danger');
+    }
+    
+    function showMessage(message, type) {
+        // Create and show alert message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert after navbar
+        const navbar = document.querySelector('.navbar');
+        if (navbar && navbar.nextSibling) {
+            navbar.parentNode.insertBefore(alertDiv, navbar.nextSibling);
+        }
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Initialize polling if there's a current conversion
+    {% if current_conversion_id %}
+    document.addEventListener('DOMContentLoaded', function() {
+        // Start polling for existing conversion
+        const tempElement = document.getElementById('temp-conversion');
+        startPolling('{{ current_conversion_id }}', tempElement);
+    });
+    {% endif %}
+    
+    // Clean up intervals on page unload
+    window.addEventListener('beforeunload', function() {
+        if (window.conversionInterval) {
+            clearInterval(window.conversionInterval);
+        }
+        if (window.currentPollInterval) {
+            clearInterval(window.currentPollInterval);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}PDF Converter - Simple Document Conversion{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="container">
+        <h1 class="hero-title">PDF Converter</h1>
+        <p class="hero-subtitle">Convert your documents to PDF format quickly and easily</p>
+        
+        {% if user.is_authenticated %}
+            <div class="user-info">
+                <div class="balance-info">
+                    <span><i class="fas fa-coins"></i> Balance: €{{ user.balance }}</span>
+                    <span><i class="fas fa-gift"></i> Free conversions: {{ user.free_conversions }}</span>
+                </div>
+            </div>
+        {% else %}
+            <div class="d-flex justify-content-center gap-3 mb-4">
+                <a href="{% url 'register' %}" class="btn btn-primary">Get Started</a>
+                <a href="{% url 'login' %}" class="btn btn-secondary">Login</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+    <div class="feature-grid">
+        <!-- DOCX to PDF - Available -->
+        <div class="feature-card" onclick="{% if user.is_authenticated %}window.location.href='{% url 'convert' %}'{% else %}window.location.href='{% url 'login' %}'{% endif %}">
+            <div class="feature-icon docx">
+                <i class="fas fa-file-word"></i>
+            </div>
+            <h3 class="feature-title">DOCX to PDF</h3>
+            <p class="feature-description">Convert Microsoft Word documents to PDF format</p>
+            {% if pricing.docx %}
+                {% if user.is_authenticated and user.free_conversions > 0 %}
+                    <div class="feature-badge badge-free">Free* ({{ user.free_conversions }} left)</div>
+                {% else %}
+                    <div class="feature-badge" style="background-color: #e0f2fe; color: #0369a1;">{{ pricing.docx.get_pricing_description }}</div>
+                {% endif %}
+            {% else %}
+                <div class="feature-badge badge-free">Free*</div>
+            {% endif %}
+            <div class="btn btn-primary">
+                {% if user.is_authenticated %}Convert Now{% else %}Login to Convert{% endif %}
+            </div>
+        </div>
+
+        <!-- Excel to PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon excel">
+                <i class="fas fa-file-excel"></i>
+            </div>
+            <h3 class="feature-title">Excel to PDF</h3>
+            <p class="feature-description">Convert spreadsheets to PDF with perfect formatting</p>
+            {% if pricing.xlsx %}
+                <div class="feature-badge badge-premium">{{ pricing.docx.get_pricing_description }}</div>
+            {% else %}
+                <div class="feature-badge badge-premium">Premium</div>
+            {% endif %}
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        <!-- PowerPoint to PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon powerpoint">
+                <i class="fas fa-file-powerpoint"></i>
+            </div>
+            <h3 class="feature-title">PowerPoint to PDF</h3>
+            <p class="feature-description">Convert presentations to PDF for easy sharing</p>
+            {% if pricing.pptx %}
+                <div class="feature-badge badge-premium">€{{ pricing.docx.get_pricing_description }}/conversion</div>
+            {% else %}
+                <div class="feature-badge badge-premium">Premium</div>
+            {% endif %}
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        <!-- Images to PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon image">
+                <i class="fas fa-images"></i>
+            </div>
+            <h3 class="feature-title">Images to PDF</h3>
+            <p class="feature-description">Convert JPG, PNG, and other images to PDF</p>
+            {% if pricing.image %}
+                <div class="feature-badge badge-premium">€{{ pricing.docx.get_pricing_description }}/conversion</div>
+            {% else %}
+                <div class="feature-badge badge-premium">Premium</div>
+            {% endif %}
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        <!-- Merge PDFs - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon merge">
+                <i class="fas fa-object-group"></i>
+            </div>
+            <h3 class="feature-title">Merge PDFs</h3>
+            <p class="feature-description">Combine multiple PDF files into one document</p>
+            {% if pricing.merge %}
+                <div class="feature-badge badge-premium">€{{ pricing.docx.get_pricing_description }}/operation</div>
+            {% else %}
+                <div class="feature-badge badge-premium">Premium</div>
+            {% endif %}
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div>
+
+        {% comment %} <!-- Compress PDF - Premium -->
+        <div class="feature-card disabled">
+            <div class="feature-icon compress">
+                <i class="fas fa-compress-alt"></i>
+            </div>
+            <h3 class="feature-title">Compress PDF</h3>
+            <p class="feature-description">Reduce PDF file size without losing quality</p>
+            {% if pricing.compress %}
+                <div class="feature-badge badge-premium">€{{ pricing.compress.price }}/operation</div>
+            {% else %}
+                <div class="feature-badge badge-premium">Premium</div>
+            {% endif %}
+            <div class="btn btn-disabled">
+                <i class="fas fa-lock"></i> Coming Soon
+            </div>
+        </div> {% endcomment %}
+    </div>
+    
+    <!-- Pricing note -->
+    <div class="text-center mt-5 mb-4">
+        <p class="text-muted">
+            <small>
+                <i class="fas fa-info-circle"></i> 
+                * New users get 3 free DOCX to PDF conversions. After that, pricing starts from €0.50 + €0.10/page. Minimum charge: €0.10.
+            </small>
+        </p>
+    </div>
+</div>
+
+{% if not user.is_authenticated %}
+<div class="container mt-5 mb-5 text-center">
+    <div class="alert alert-info d-inline-block">
+        <h5><i class="fas fa-star"></i> Get Started for Free!</h5>
+        <p class="mb-2">Sign up now and get 3 free DOCX to PDF conversions to try our service!</p>
+        <a href="{% url 'register' %}" class="btn btn-primary">Create Free Account</a>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Add click handlers for disabled cards to show info
+document.querySelectorAll('.feature-card.disabled').forEach(card => {
+    card.addEventListener('click', function() {
+        alert('This feature will be available soon! Sign up to get notified when it\'s ready.');
+    });
+});
+</script>
+{% endblock %}
