@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse, FileResponse, JsonResponse
@@ -58,6 +58,13 @@ def register(request):
     return render(request, 'registration/register.html', {'form': form})
 
 
+def logout_view(request):
+    """Custom logout view that redirects to home"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('home')
+
+
 @login_required
 def convert_view(request):
     """Main conversion view for DOCX to PDF"""
@@ -73,10 +80,10 @@ def convert_view(request):
         # Create default pricing if not exists
         docx_pricing = ConversionPricing.objects.create(
             operation_type='docx_to_pdf',
-            base_price=0.50,
+            base_price=0.60,
             price_per_page=0.10,
             pricing_type='file_plus_pages',
-            minimum_charge=0.10,
+            minimum_charge=0.60,
             is_free_operation=False,
             free_limit=3,
             description='Convert DOCX files to PDF'
@@ -395,3 +402,13 @@ def transactions_view(request):
         'transactions': transactions,
         'stats': stats
     })
+
+
+def privacy_policy_view(request):
+    """Privacy policy page"""
+    return render(request, 'privacy_policy.html')
+
+
+def terms_of_use_view(request):
+    """Terms of use page"""
+    return render(request, 'terms_of_use.html')

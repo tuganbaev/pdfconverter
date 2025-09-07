@@ -118,7 +118,7 @@
                                             </div>
                                             <div class="d-flex justify-content-between">
                                                 <span>Cost:</span>
-                                                <span class="fw-bold text-danger">-€{{ docx_pricing.price }}</span>
+                                                <span class="fw-bold text-danger">-€{{ docx_pricing.price|default:"0.60" }}</span>
                                             </div>
                                             <hr>
                                             <div class="d-flex justify-content-between">
@@ -400,9 +400,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Calculate balance after conversion for paid operations
             if (balanceAfter) {
-                const currentBalance = parseFloat('{{ user.balance }}');
-                const conversionPrice = parseFloat('{{ docx_pricing.price }}');
-                const freeConversions = parseInt('{{ user.free_conversions }}');
+                const currentBalance = parseFloat('{{ user.balance }}') || 0;
+                const conversionPrice = parseFloat('{{ docx_pricing.price|default:"0.60" }}') || 0.60;
+                const freeConversions = parseInt('{{ user.free_conversions }}') || 0;
                 
                 if (freeConversions > 0) {
                     balanceAfter.textContent = '€' + currentBalance.toFixed(2);
@@ -741,12 +741,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         hideProgress();
                         showSuccessMessage('Document converted successfully!');
                         
-                        // Auto-download after a short delay
-                        if (data.download_url) {
-                            setTimeout(() => {
-                                window.location.href = data.download_url;
-                            }, 1000);
-                        }
                     }, 500);
                     
                     clearInterval(pollInterval);
